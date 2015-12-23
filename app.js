@@ -2,10 +2,11 @@ var express = require("express");
 var path = require("path");
 var app = express();
 var mongoose = require("mongoose");
+var bodyParser = require("body-parser");
+var methodOverrid = require("method-override");
 
-mongoose.connect(process.env.MONGO_DB);
-// process.env.{{환경변수 명}}
-
+mongoose.connect("mongodb://admin:admin@ds035485.mongolab.com:35485/myapps");
+// process.env.{{환경변수명}} ex) process.env.MONGO_DB
 var db = mongoose.connection;
 
 db.once("open", function() {
@@ -16,73 +17,90 @@ db.on("error", function(err) {
   console.log("DB Error :", err);
 });
 
-var dataSchema = mongoose.Schema({
-  name:String,
-  count:Number
+// model setting
+var postSchema = mongoose.Schema({
+  title:{type:String, required:true},
+  body:{type:String, required:true},
+  createdAt:{type:Date, default:Date.now},
+  updateAt:Date
 });
+var Post = mongoose.model("post", postSchema);
 
-var Data = mongoose.model("data", dataSchema);
-Data.findOne({name:"myData"}, function(err, data) {
-  if(err) return console.log("Data Error :", err);
-  if(!data) {
-    Data.create({name:"myData", count:0}, function(err, data) {
-      if(err) return console.log("Data Error :", err);
-      console.log("Counter initialized :", data);
-    });
-  }
-});
-
+// view setting
 app.set("view engine", "jade");
+
+// set middlewares
 app.use(express.static(path.join(__dirname, "public")));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended:true}));
+app.use(methodOverrid("_method"));
 
-var data = {count: 0};
-
+// set routes
 app.get("/", function(req, res) {
-  Data.findOne({name:"myData"}, function(err, data) {
-  if(err) return console.log("Data Error :", err);
-  data.count++;
-  data.save(function(err) {
-    if(err) return console.log("Data Error :", err);
-    res.render("my_first_jade", data);
+  Post.find({}).sort("-createdAt").exec(function(err, posts) {
+    if(err) return error(res, err);
+    success(res, posts, "posts/index");
+  });
+}); // index
+
+app.get("/posts", function(req, res) {
+  Post.find({}).sort("-createdAt").exec(function(err, posts) {
+    if(err) return error(res, err);
+    success(res, posts, "posts/index");
+  });
+}); // index
+
+app.get("/posts/new", function(req, res) {
+  res.render("posts/new");
+});
+
+app.post("/posts", function(req, res) {
+  Post.create(req.body.post, function(err, post) {
+    if(err) return error(res, err);
+    res.redirect("/posts");
   });
 });
-});
 
-app.get("/reset", function(req, res) {
-  setCounter(res, 0);
-});
-
-app.get("/set/count", function(req, res) {
-  if(req.query.count) setCounter(res, req.query.count);
-  else getCounter(res);
-});
-
-app.get("/set/:num", function(req, res) {
-  data.count = req.params.num;
-  res.render("my_first_jade", data);
-});
-// app.get("/", function(req, res) {
-//   res.send("Hello World!");
-// });
-
-function setCounter(res, num) {
-  Data.findOne({name:"myData"}, function(err, data) {
-    if(err) return console.log("Data Error :", err);
-    data.count = num;
-    data.save(function(err) {
-      if(err) return console.log("Data Error :", err);
-      res.render("my_first_jade", data);
-    });
+app.get("/posts/:id", function(req, res) {
+  Post.findById(req.params.id, function(err, post) {
+    if(err) return error(res, err);
+    success(res, post, "posts/show");
   });
-}
+});
 
-function getCount(res) {
-  Data.findOne({name:"myData"}, function(err, data) {
-    if(err) return console.log("Data Error :", err);
-    res.render("my_first_jade", data);
+app.get("/posts/:id/edit", function(req, res) {
+  Post.findById(req.params.id, function(err, post) {
+    if(err) return error(res, err);
+    success(res, post, "posts/edit");
   });
-}
+})
 
+app.put("/posts/:id", function(req, res) {
+  req.body.post.updateAt = Date.now();
+  console.log(req.body.post);
+  Post.findByIdAndUpdate(req.params.id, req.body.post, function(err, post) {
+    if(err) return error(res, err);
+    res.redirect("/posts/"+req.params.id);
+  });
+});
+
+app.delete("/posts/:id", function(req, res) {
+  Post.findByIdAndRemove(req.params.id, function(err, post) {
+    if(err) return error(res, err);
+    res.redirect("/posts");
+  });
+});
+
+// start server
 app.listen(3000, function() {
   console.log("Server On!");
 });
+
+// definition method
+function error(res, data) {
+  return res.json({success:false, message:data});
+}
+
+function success(res, data, view) {
+  res.render(view, {data: data});
+}

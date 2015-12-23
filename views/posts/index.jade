@@ -1,0 +1,20 @@
+doctype html
+html
+  head 
+    include ../partials/head
+  body
+    header
+      include ../partials/header
+    div.posts
+      include partials/top
+      // main start
+      a(href="/posts/new")
+        button New
+      ul
+        each val in data
+          li
+            a(href="/posts/#{val._id}") #{val.title} 
+            span #{val.createdAt.toLocaleDateString()}
+      // main end
+    footer
+      include ../partials/footer

@@ -1,0 +1,27 @@
+doctype html
+html
+  head 
+    include ../partials/head
+  body
+    header
+      include ../partials/header
+    .posts
+      include partials/top
+      // main start
+      .show
+        h3 #{data.title}
+        .time 
+          |Created at <br/>
+          |#{data.createdAt.toLocaleDateString()} <br/>
+          |#{data.createdAt.toLocaleTimeString()} <br/>
+        p.body #{data.body}
+        .tools
+          a(href="/posts/#{data._id}/edit")
+            button Edit
+          form(class="btn_delete", method="post", action="/posts/#{data._id}?_method=delete")
+            button(type="submit") Delete
+        a(href="/posts")
+          button Back
+      // main end
+    footer
+      include ../partials/footer

@@ -1,0 +1,24 @@
+doctype html
+html
+  head 
+    include ../partials/head
+  body
+    header
+      include ../partials/header
+    div.posts
+      include partials/top
+      // main start
+      .edit
+        h3 Edit Post
+        form(class="posts_form", method="post", action="/posts/#{data._id}?_method=put")
+          label Title
+          input(type="text", name="post[title]", value="#{data.title}")
+          <br/>
+          label Body
+          textarea(name="post[body]") #{data.body}
+          button(type="submit") Submit
+        a(href="/posts/#{data._id}")
+          button Back
+      // main end
+    footer
+      include ../partials/footer

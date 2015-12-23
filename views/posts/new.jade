@@ -1,0 +1,24 @@
+doctype html
+html
+  head 
+    include ../partials/head
+  body
+    header
+      include ../partials/header
+    .posts
+      include partials/top
+      // main start
+      .new
+        h3 New Post
+        form(class="posts_form", method="post", action="/posts")
+          label Title
+          input(type="text", name="post[title]", value="")
+          </br>
+          label body
+          textarea(name="post[body]")
+          button(type="submit") Submit
+        a(href="/posts")
+          button Back
+      // main end
+    footer
+      include ../partials/footer
